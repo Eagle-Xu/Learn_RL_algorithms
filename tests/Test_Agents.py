@@ -2,21 +2,21 @@ import random
 
 import gym
 
-# from agents.actor_critic_agents.A2C import A2C
+from agents.actor_critic_agents.A2C import A2C
 from agents.actor_critic_agents.A3C import A3C
-# from agents.actor_critic_agents.SAC import SAC
-# from agents.DQN_agents.DQN_HER import DQN_HER
+from agents.actor_critic_agents.SAC import SAC
+from agents.DQN_agents.DQN_HER import DQN_HER
 from agents.DQN_agents.DDQN import DDQN
 from agents.DQN_agents.DDQN_With_Prioritised_Experience_Replay import DDQN_With_Prioritised_Experience_Replay
 from agents.DQN_agents.DQN_With_Fixed_Q_Targets import DQN_With_Fixed_Q_Targets
 from agents.DQN_agents.Dueling_DDQN import Dueling_DDQN
-# from agents.actor_critic_agents.DDPG import DDPG
-# from agents.actor_critic_agents.DDPG_HER import DDPG_HER
+from agents.actor_critic_agents.DDPG import DDPG
+from agents.actor_critic_agents.DDPG_HER import DDPG_HER
 from environments.Bit_Flipping_Environment import Bit_Flipping_Environment
-# from agents.policy_gradient_agents.PPO import PPO
+from agents.policy_gradient_agents.PPO import PPO
 # from environments.Four_Rooms_Environment import Four_Rooms_Environment
-# from agents.hierarchical_agents.SNN_HRL import SNN_HRL
-# from agents.actor_critic_agents.TD3 import TD3
+#from agents.hierarchical_agents.SNN_HRL import SNN_HRL
+from agents.actor_critic_agents.TD3 import TD3
 from agents.Trainer import Trainer
 from utilities.data_structures.Config import Config
 from agents.DQN_agents.DQN import DQN
