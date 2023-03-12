@@ -3,7 +3,7 @@ import random
 import gym
 
 # from agents.actor_critic_agents.A2C import A2C
-# from agents.actor_critic_agents.A3C import A3C
+from agents.actor_critic_agents.A3C import A3C
 # from agents.actor_critic_agents.SAC import SAC
 # from agents.DQN_agents.DQN_HER import DQN_HER
 from agents.DQN_agents.DDQN import DDQN
@@ -218,8 +218,12 @@ def test_agents_can_play_games_of_different_dimensions():
 if __name__ =="__main__":
    config.num_episodes_to_run=300
    config.hyperparameters["DQN_Agents"]["batch_size"] = 64
-   config.environment = gym.make("CartPole-v1")
+   """config.environment = gym.make("CartPole-v1")
    AGENTS = [Dueling_DDQN,DDQN_With_Prioritised_Experience_Replay,DDQN,DQN_With_Fixed_Q_Targets,DQN]
+   trainer = Trainer(config, AGENTS)
+   results = trainer.run_games_for_agents()"""
+   AGENTS = [SAC, TD3, PPO, DDPG]
+   config.environment = gym.make("MountainCarContinuous-v0")
    trainer = Trainer(config, AGENTS)
    results = trainer.run_games_for_agents()
    for agent in AGENTS:
