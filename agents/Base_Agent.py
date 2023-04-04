@@ -45,11 +45,11 @@ class Base_Agent(object):
         gym.logger.set_level(40)  # stops it from printing an unnecessary warning
         self.log_game_info()
 
-    def step(self):
+    def step(self): # 下一步
         """Takes a step in the game. This method must be overriden by any agent"""
         raise ValueError("Step needs to be implemented by the agent")
 
-    def get_environment_title(self):
+    def get_environment_title(self): # 获取环境名字
         """Extracts name of environment from it"""
         try:
             name = self.environment.unwrapped.id
@@ -69,16 +69,16 @@ class Base_Agent(object):
                 if name[-3:] == "Env": name = name[:-3]
         return name
 
-    def get_lowest_possible_episode_score(self):
+    def get_lowest_possible_episode_score(self): # 获得epsode的最低分
         """Returns the lowest possible episode score you can get in an environment"""
         if self.environment_title == "Taxi": return -800
         return None
 
-    def get_action_size(self):
+    def get_action_size(self): # 获取动作大小
         """Gets the action_size for the gym env into the correct shape for a neural network"""
         if "overwrite_action_size" in self.config.__dict__: return self.config.overwrite_action_size
         if "action_size" in self.environment.__dict__: return self.environment.action_size
-        if self.action_types == "DISCRETE": return self.environment.action_space.n
+        if self.action_types == "DISCRETE": return self.environment.action_space.n # 离散的
         else: return self.environment.action_space.shape[0]
 
     def get_state_size(self):

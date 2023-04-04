@@ -223,7 +223,7 @@ if __name__ =="__main__":
    AGENTS = [Dueling_DDQN,DDQN_With_Prioritised_Experience_Replay,DDQN,DQN_With_Fixed_Q_Targets,DQN]
    trainer = Trainer(config, AGENTS)
    results = trainer.run_games_for_agents()"""
-   AGENTS =[DDPG]
+   AGENTS =[PPO]
    config.environment = gym.make("MountainCarContinuous-v0")
    trainer = Trainer(config, AGENTS)
    results = trainer.run_games_for_agents()

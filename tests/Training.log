@@ -1,0 +1,24 @@
+2023-04-04 17:41:49,849 - agents.Base_Agent - INFO - 0 -- MountainCarContinuous
+2023-04-04 17:41:49,849 - agents.Base_Agent - INFO - 1 -- CONTINUOUS
+2023-04-04 17:41:49,849 - agents.Base_Agent - INFO - 2 -- 1
+2023-04-04 17:41:49,849 - agents.Base_Agent - INFO - 3 -- None
+2023-04-04 17:41:49,849 - agents.Base_Agent - INFO - 4 -- 2
+2023-04-04 17:41:49,849 - agents.Base_Agent - INFO - 5 -- {'learning_rate': 0.01, 'linear_hidden_units': [20], 'final_layer_activation': 'SOFTMAX', 'learning_iterations_per_round': 7, 'discount_rate': 0.99, 'batch_norm': False, 'clip_epsilon': 0.1, 'episodes_per_learning_round': 7, 'normalise_rewards': False, 'gradient_clipping_norm': 5, 'mu': 0.0, 'theta': 0.0, 'sigma': 0.0, 'epsilon_decay_rate_denominator': 1, 'clip_rewards': False}
+2023-04-04 17:41:49,850 - agents.Base_Agent - INFO - 6 -- 90.0
+2023-04-04 17:41:49,850 - agents.Base_Agent - INFO - 7 -- 100
+2023-04-04 17:41:49,850 - agents.Base_Agent - INFO - 8 -- cpu
+2023-04-04 17:41:49,980 - agents.Base_Agent - INFO - Reseting game -- New start state [-0.45025005  0.        ]
+2023-04-04 17:41:59,882 - agents.Base_Agent - INFO - Reseting game -- New start state [-0.47372286  0.        ]
+2023-04-04 17:42:09,820 - agents.Base_Agent - INFO - Reseting game -- New start state [-0.44474662  0.        ]
+2023-04-04 17:42:19,487 - agents.Base_Agent - INFO - Reseting game -- New start state [-0.48705281  0.        ]
+2023-04-04 17:42:29,261 - agents.Base_Agent - INFO - Reseting game -- New start state [-0.41550824  0.        ]
+2023-04-04 17:42:38,713 - agents.Base_Agent - INFO - Reseting game -- New start state [-0.59736129  0.        ]
+2023-04-04 17:42:48,764 - agents.Base_Agent - INFO - Reseting game -- New start state [-0.4750705  0.       ]
+2023-04-04 17:42:59,670 - agents.Base_Agent - INFO - Reseting game -- New start state [-0.54150631  0.        ]
+2023-04-04 17:43:09,487 - agents.Base_Agent - INFO - Reseting game -- New start state [-0.55523098  0.        ]
+2023-04-04 17:43:19,348 - agents.Base_Agent - INFO - Reseting game -- New start state [-0.47265072  0.        ]
+2023-04-04 17:43:29,291 - agents.Base_Agent - INFO - Reseting game -- New start state [-0.58628421  0.        ]
+2023-04-04 17:43:39,204 - agents.Base_Agent - INFO - Reseting game -- New start state [-0.48908218  0.        ]
+2023-04-04 17:43:49,003 - agents.Base_Agent - INFO - Reseting game -- New start state [-0.5876213  0.       ]
+2023-04-04 17:43:58,559 - agents.Base_Agent - INFO - Reseting game -- New start state [-0.59338274  0.        ]
+2023-04-04 17:44:08,338 - agents.Base_Agent - INFO - Reseting game -- New start state [-0.59296734  0.        ]
