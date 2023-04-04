@@ -2,7 +2,7 @@ from utilities.OU_Noise import OU_Noise
 from exploration_strategies.Base_Exploration_Strategy import Base_Exploration_Strategy
 
 class OU_Noise_Exploration(Base_Exploration_Strategy):
-    """Ornstein-Uhlenbeck noise process exploration strategy"""
+    """Ornstein-Uhlenbeck noise process exploration strategy OU噪声"""
     def __init__(self, config):
         super().__init__(config)
         self.noise = OU_Noise(self.config.action_size, self.config.seed, self.config.hyperparameters["mu"],

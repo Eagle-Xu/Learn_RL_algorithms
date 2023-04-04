@@ -4,7 +4,7 @@ import random
 import torch
 
 class Epsilon_Greedy_Exploration(Base_Exploration_Strategy):
-    """Implements an epsilon greedy exploration strategy"""
+    """Implements an epsilon greedy exploration strategy 实现各种各样的epsilon贪婪策略"""
     def __init__(self, config):
         super().__init__(config)
         self.notified_that_exploration_turned_off = False
@@ -38,7 +38,7 @@ class Epsilon_Greedy_Exploration(Base_Exploration_Strategy):
         return  np.random.randint(0, action_values.shape[1])
 
     def get_updated_epsilon_exploration(self, action_info, epsilon=1.0):
-        """Gets the probability that we just pick a random action. This probability decays the more episodes we have seen"""
+        """Gets the probability that we just pick a random action. This probability decays the more episodes we have seen 我们探索的episodes愈多，epsilon越小"""
         episode_number = action_info["episode_number"]
         epsilon_decay_denominator = self.config.hyperparameters["epsilon_decay_rate_denominator"]
 

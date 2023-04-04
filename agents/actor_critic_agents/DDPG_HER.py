@@ -2,7 +2,7 @@ from agents.actor_critic_agents.DDPG import DDPG
 from agents.HER_Base import HER_Base
 
 class DDPG_HER(HER_Base, DDPG):
-    """DDPG algorithm with hindsight experience replay"""
+    """DDPG algorithm with hindsight experience replay具有事后经验回放的DDPG算法"""
     agent_name = "DDPG-HER"
 
     def __init__(self, config):

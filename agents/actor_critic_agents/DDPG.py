@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn.functional as functional
 from torch import optim
@@ -6,17 +7,20 @@ from utilities.data_structures.Replay_Buffer import Replay_Buffer
 from exploration_strategies.OU_Noise_Exploration import OU_Noise_Exploration
 
 class DDPG(Base_Agent):
-    """A DDPG Agent"""
+    """A DDPG Agent，专为连续动作
+      DDPG强化学习算法全称Deep Deterministic Policy Gradient，
+    本质上是AC框架的一种强化学习算法，结合了基于policy的policy Gradient和基于action value的DQN，可
+    以通过off-policy的方法，单步更新policy，预测出确定性策略，进而实现total reward最大化"""
     agent_name = "DDPG"
 
     def __init__(self, config):
         Base_Agent.__init__(self, config)
-        self.hyperparameters = config.hyperparameters
-        self.critic_local = self.create_NN(input_dim=self.state_size + self.action_size, output_dim=1, key_to_use="Critic")
+        self.hyperparameters = config.hyperparameters # 用超参数配置
+        self.critic_local = self.create_NN(input_dim=self.state_size + self.action_size, output_dim=1, key_to_use="Critic") # 输入状态和动作，输出一个值，打分
         self.critic_target = self.create_NN(input_dim=self.state_size + self.action_size, output_dim=1, key_to_use="Critic")
         Base_Agent.copy_model_over(self.critic_local, self.critic_target)
 
-        self.critic_optimizer = optim.Adam(self.critic_local.parameters(),
+        self.critic_optimizer = optim.Adam(self.critic_local.parameters(),# 参数更新
                                            lr=self.hyperparameters["Critic"]["learning_rate"], eps=1e-4)
         self.memory = Replay_Buffer(self.hyperparameters["Critic"]["buffer_size"], self.hyperparameters["batch_size"],
                                     self.config.seed)
@@ -31,14 +35,15 @@ class DDPG(Base_Agent):
     def step(self):
         """Runs a step in the game"""
         while not self.done:
+            self.environment.render() # 渲染环境
             # print("State ", self.state.shape)
-            self.action = self.pick_action()
-            self.conduct_action(self.action)
-            if self.time_for_critic_and_actor_to_learn():
+            self.action = self.pick_action() # 用actor network，OU噪声选一个动作
+            self.conduct_action(self.action) # 和环境交互，执行一个动作
+            if self.time_for_critic_and_actor_to_learn(): # 达到设置数量
                 for _ in range(self.hyperparameters["learning_updates_per_learning_session"]):
                     states, actions, rewards, next_states, dones = self.sample_experiences()
-                    self.critic_learn(states, actions, rewards, next_states, dones)
-                    self.actor_learn(states)
+                    self.critic_learn(states, actions, rewards, next_states, dones) # 更新critic网络，TD算法
+                    self.actor_learn(states) # 更像actor网络
             self.save_experience()
             self.state = self.next_state #this is to set the state for the next iteration
             self.global_step_number += 1
@@ -49,24 +54,28 @@ class DDPG(Base_Agent):
 
     def pick_action(self, state=None):
         """Picks an action using the actor network and then adds some noise to it to ensure exploration"""
-        if state is None: state = torch.from_numpy(self.state).float().unsqueeze(0).to(self.device)
-        self.actor_local.eval()
+        if state is None: state = self.state
+        if isinstance(state, np.int64) or isinstance(state, int): state = np.array([state]) # 如果状态是int型，转变成数组
+        state = torch.tensor(state).float().unsqueeze(0).to(self.device) #转变成tensor结构，然后升维
+        if len(state.shape) < 2: state = state.unsqueeze(0)
+        self.actor_local.eval() # 设置为评估模式，Dropout和BatchNorm不会"工作"
+
         with torch.no_grad():
             action = self.actor_local(state).cpu().data.numpy()
-        self.actor_local.train()
+        self.actor_local.train() # 训练模式
         action = self.exploration_strategy.perturb_action_for_exploration_purposes({"action": action})
         return action.squeeze(0)
 
     def critic_learn(self, states, actions, rewards, next_states, dones):
         """Runs a learning iteration for the critic"""
         loss = self.compute_loss(states, next_states, rewards, actions, dones)
-        self.take_optimisation_step(self.critic_optimizer, self.critic_local, loss, self.hyperparameters["Critic"]["gradient_clipping_norm"])
-        self.soft_update_of_target_network(self.critic_local, self.critic_target, self.hyperparameters["Critic"]["tau"])
+        self.take_optimisation_step(self.critic_optimizer, self.critic_local, loss, self.hyperparameters["Critic"]["gradient_clipping_norm"]) # 更新local网络
+        self.soft_update_of_target_network(self.critic_local, self.critic_target, self.hyperparameters["Critic"]["tau"]) # 更新目标网络
 
     def compute_loss(self, states, next_states, rewards, actions, dones):
         """Computes the loss for the critic"""
-        with torch.no_grad():
-            critic_targets = self.compute_critic_targets(next_states, rewards, dones)
+        with torch.no_grad(): # 不用计算梯度
+            critic_targets = self.compute_critic_targets(next_states, rewards, dones)  # 计算下个状态的v值
         critic_expected = self.compute_expected_critic_values(states, actions)
         loss = functional.mse_loss(critic_expected, critic_targets)
         return loss
@@ -74,14 +83,14 @@ class DDPG(Base_Agent):
     def compute_critic_targets(self, next_states, rewards, dones):
         """Computes the critic target values to be used in the loss for the critic"""
         critic_targets_next = self.compute_critic_values_for_next_states(next_states)
-        critic_targets = self.compute_critic_values_for_current_states(rewards, critic_targets_next, dones)
+        critic_targets = self.compute_critic_values_for_current_states(rewards, critic_targets_next, dones) # 更准确的v
         return critic_targets
 
     def compute_critic_values_for_next_states(self, next_states):
         """Computes the critic values for next states to be used in the loss for the critic"""
         with torch.no_grad():
-            actions_next = self.actor_target(next_states)
-            critic_targets_next = self.critic_target(torch.cat((next_states, actions_next), 1))
+            actions_next = self.actor_target(next_states) # 输入下一个状态，输出下一个预测动作
+            critic_targets_next = self.critic_target(torch.cat((next_states, actions_next), 1)) # 输出，下一个状态，下一个动作的打分
         return critic_targets_next
 
     def compute_critic_values_for_current_states(self, rewards, critic_targets_next, dones):
@@ -91,7 +100,7 @@ class DDPG(Base_Agent):
 
     def compute_expected_critic_values(self, states, actions):
         """Computes the expected critic values to be used in the loss for the critic"""
-        critic_expected = self.critic_local(torch.cat((states, actions), 1))
+        critic_expected = self.critic_local(torch.cat((states, actions), 1)) # 期望的值
         return critic_expected
 
     def time_for_critic_and_actor_to_learn(self):
@@ -113,3 +122,5 @@ class DDPG(Base_Agent):
         actions_pred = self.actor_local(states)
         actor_loss = -self.critic_local(torch.cat((states, actions_pred), 1)).mean()
         return actor_loss
+
+

@@ -107,7 +107,7 @@ class Base_Agent(object):
                 return self.environment.unwrapped.spec.reward_threshold
 
     def get_trials(self):
-        """Gets the number of trials to average a score over"""
+        """Gets the number of trials to average a score over活动平均得分的次数"""
         if self.environment_title in ["AntMaze", "FetchReach", "Hopper", "Walker2d", "CartPole"]: return 100
         try: return self.environment.unwrapped.trials
         except AttributeError: return self.environment.spec.trials
@@ -156,14 +156,14 @@ class Base_Agent(object):
 
     def reset_game(self):
         """Resets the game information so we are ready to play a new episode"""
-        self.environment.seed(self.config.seed)
-        self.state = self.environment.reset()
-        self.next_state = None
+       # self.environment.seed(self.config.seed)
+        self.state = self.environment.reset() # 重置环境状态，获取初试状态
+        self.next_state = None # 下一个状态
         self.action = None
         self.reward = None
         self.done = False
-        self.total_episode_score_so_far = 0
-        self.episode_states = []
+        self.total_episode_score_so_far = 0 # 总的回合分数
+        self.episode_states = [] # 一个回合的状态存储
         self.episode_rewards = []
         self.episode_actions = []
         self.episode_next_states = []
@@ -186,9 +186,9 @@ class Base_Agent(object):
         """Runs game to completion n times and then summarises results and saves model (if asked to)"""
         if num_episodes is None: num_episodes = self.config.num_episodes_to_run # 如果episodes不存在，就等于默认配置
         start = time.time() # 开始计算时间
-        while self.episode_number < num_episodes:
-            self.reset_game()
-            self.step()
+        while self.episode_number < num_episodes: # 是否达到总回合数
+            self.reset_game() # 每一个回合都要重置环境
+            self.step()  # 下一步
             if save_and_print_results: self.save_and_print_result()
         time_taken = time.time() - start
         self.environment.close()

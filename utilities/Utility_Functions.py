@@ -23,7 +23,7 @@ def create_actor_distribution(action_types, actor_output, action_size):
     """Creates a distribution that the actor can then use to randomly draw actions"""
     if action_types == "DISCRETE":
         assert actor_output.size()[1] == action_size, "Actor output the wrong size"
-        action_distribution = Categorical(actor_output)  # this creates a distribution to sample from
+        action_distribution = Categorical(actor_output)  # this creates a distribution to sample from按照传入的probs中给定的概率，在相应的位置处进行取样，取样返回的是该位置的整数索引
     else:
         assert actor_output.size()[1] == action_size * 2, "Actor output the wrong size"
         means = actor_output[:, :action_size].squeeze(0)

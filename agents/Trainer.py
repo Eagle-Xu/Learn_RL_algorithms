@@ -76,7 +76,7 @@ class Trainer(object):
         self.results = self.create_object_to_store_results() # 把每个智能体对象保存在results中
         for agent_number, agent_class in enumerate(self.agents): # agents为智能体列表，便利每个智能体
             agent_name = agent_class.agent_name # 获取每个智能体名字
-            self.run_games_for_agent(agent_number + 1, agent_class)
+            self.run_games_for_agent(agent_number + 1, agent_class) # 运行每一个智能体
             if self.config.visualise_overall_agent_results:
                 agent_rolling_score_results = [results[1] for results in  self.results[agent_name]]
                 self.visualise_overall_agent_results(agent_rolling_score_results, agent_name, show_mean_and_std_range=True)
@@ -114,7 +114,7 @@ class Trainer(object):
             self.environment_name = agent.environment_title # 获取环境名字
             print(agent.hyperparameters) # 打印智能体的参数配置
             print("RANDOM SEED " , agent_config.seed) # 打印生成的随机种子
-            game_scores, rolling_scores, time_taken = agent.run_n_episodes()
+            game_scores, rolling_scores, time_taken = agent.run_n_episodes() # 运行episodes
             print("Time taken: {}".format(time_taken), flush=True)
             self.print_two_empty_lines()
             agent_results.append([game_scores, rolling_scores, len(rolling_scores), -1 * max(rolling_scores), time_taken])

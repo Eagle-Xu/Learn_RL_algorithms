@@ -1,6 +1,6 @@
 import random
 
-import gym
+import  gym
 
 from agents.actor_critic_agents.A2C import A2C
 from agents.actor_critic_agents.A3C import A3C
@@ -75,11 +75,11 @@ config.hyperparameters = {
         "learning_rate": 0.01,
         "linear_hidden_units": [20],
         "final_layer_activation": "SOFTMAX",
-        "learning_iterations_per_round": 7,
+        "learning_iterations_per_round": 7, # 训练时的迭代次数
         "discount_rate": 0.99,
         "batch_norm": False,
         "clip_epsilon": 0.1,
-        "episodes_per_learning_round": 7,
+        "episodes_per_learning_round": 7, # 每多少个episode数据学习一次
         "normalise_rewards": False,
         "gradient_clipping_norm": 5,
         "mu": 0.0, #only required for continuous action games
@@ -151,7 +151,7 @@ config.hyperparameters = {
             "batch_norm": False,
             "gradient_clipping_norm": 2,
             "update_every_n_steps": 1,
-            "epsilon_decay_rate_denominator": 500,
+            "epsilon_decay_rate_denominator": 500, # 用于计算epsilon
             "discount_rate": 0.999,
             "learning_iterations": 1,
             "tau": 0.01,
@@ -216,15 +216,17 @@ def test_agents_can_play_games_of_different_dimensions():
         assert agent.agent_name in results.keys()
 
 if __name__ =="__main__":
-   config.num_episodes_to_run=300
-   config.hyperparameters["DQN_Agents"]["batch_size"] = 64
-   """config.environment = gym.make("CartPole-v1")
+   config.num_episodes_to_run=1000
+   config.hyperparameters["Actor_Critic_Agents"]["batch_size"] = 64
+   """
+   onfig.environment = gym.make("CartPole-v1")
    AGENTS = [Dueling_DDQN,DDQN_With_Prioritised_Experience_Replay,DDQN,DQN_With_Fixed_Q_Targets,DQN]
    trainer = Trainer(config, AGENTS)
    results = trainer.run_games_for_agents()"""
-   AGENTS = [SAC, TD3, PPO, DDPG]
+   AGENTS =[DDPG]
    config.environment = gym.make("MountainCarContinuous-v0")
    trainer = Trainer(config, AGENTS)
    results = trainer.run_games_for_agents()
    for agent in AGENTS:
        assert agent.agent_name in results.keys()
+

@@ -14,25 +14,27 @@ class A3C(Base_Agent):
     agent_name = "A3C"
     def __init__(self, config):
         super(A3C, self).__init__(config)
-        self.num_processes = multiprocessing.cpu_count()
-        self.worker_processes = max(1, self.num_processes - 2)
-        self.actor_critic = self.create_NN(input_dim=self.state_size, output_dim=[self.action_size, 1])
-        self.actor_critic_optimizer = SharedAdam(self.actor_critic.parameters(), lr=self.hyperparameters["learning_rate"], eps=1e-4)
-
+        self.num_processes = multiprocessing.cpu_count() # CPU的数量
+        self.worker_processes = max(1, self.num_processes - 2) # 工作的进程数量
+        self.actor_critic = self.create_NN(input_dim=self.state_size, output_dim=[self.action_size, 1]) # 输入一个状态，输出的是动作分布和一个值
+        self.actor_critic_optimizer = SharedAdam(self.actor_critic.parameters(), lr=self.hyperparameters["learning_rate"], eps=1e-4) # 创建可在进程之间共享的adam优化器对象。
+         # 在各个进程当中分享
     def run_n_episodes(self):
         """Runs game to completion n times and then summarises results and saves model (if asked to)"""
-        start = time.time()
-        results_queue = Queue()
-        gradient_updates_queue = Queue()
-        episode_number = multiprocessing.Value('i', 0)
-        self.optimizer_lock = multiprocessing.Lock()
-        episodes_per_process = int(self.config.num_episodes_to_run / self.worker_processes) + 1
+        start = time.time() # 设置开始时间
+        results_queue = Queue() # 创建一个队列
+        gradient_updates_queue =Queue() # 梯度更新队列
+        episode_number = multiprocessing.Value('i', 0) # 多进程共享字符，“i”代表的是int型，返回的是一个对象
+        self.optimizer_lock = multiprocessing.Lock() # 进程锁，当访问共享空间时，必须上锁
+        episodes_per_process = int(self.config.num_episodes_to_run / self.worker_processes) + 1 # 每个进程处理的episodes数
         processes = []
-        self.actor_critic.share_memory()
-        self.actor_critic_optimizer.share_memory()
+        self.actor_critic.share_memory() # 在进程中共享网络结构
+        self.actor_critic_optimizer.share_memory() # 在进程中共享网络优化器
 
+        # 创建子进程，执行 update_shared_model() 函数，用来更新网络参数
         optimizer_worker = multiprocessing.Process(target=self.update_shared_model, args=(gradient_updates_queue,))
-        optimizer_worker.start()
+        optimizer_worker.start() # 启动
+
 
         for process_num in range(self.worker_processes):
             worker = Actor_Critic_Worker(process_num, copy.deepcopy(self.environment), self.actor_critic, episode_number, self.optimizer_lock,
@@ -62,14 +64,15 @@ class A3C(Base_Agent):
             else: break
 
     def update_shared_model(self, gradient_updates_queue):
-        """Worker that updates the shared model with gradients as they get put into the queue"""
-        while True:
-            gradients = gradient_updates_queue.get()
-            with self.optimizer_lock:
-                self.actor_critic_optimizer.zero_grad()
-                for grads, params in zip(gradients, self.actor_critic.parameters()):
+        """Worker that updates the shared model with gradients as they get put into the queue当共享模型放入队列时，使用渐变更新共享模型的Worker"""
+        while True: # 不断循环
+            gradients = gradient_updates_queue.get() # 重共享队列中获取最新的参数配置
+            with self.optimizer_lock: # 没有进程在访问
+                self.actor_critic_optimizer.zero_grad() # 梯度归0
+                for grads, params in zip(gradients, self.actor_critic.parameters()): # 将队列中的参数复制到主网络
                     params._grad = grads  # maybe need to do grads.clone()
                 self.actor_critic_optimizer.step()
+
 
 class Actor_Critic_Worker(torch.multiprocessing.Process):
     """Actor critic worker that will play the game for the designated number of episodes """
@@ -77,9 +80,9 @@ class Actor_Critic_Worker(torch.multiprocessing.Process):
                  config, episodes_to_run, epsilon_decay_denominator, action_size, action_types, results_queue,
                  local_model, gradient_updates_queue):
         super(Actor_Critic_Worker, self).__init__()
-        self.environment = environment
+        self.environment = environment # 测试环境
         self.config = config
-        self.worker_num = worker_num
+        self.worker_num = worker_num   # worker的数量
 
         self.gradient_clipping_norm = self.config.hyperparameters["gradient_clipping_norm"]
         self.discount_rate = self.config.hyperparameters["discount_rate"]
@@ -87,7 +90,7 @@ class Actor_Critic_Worker(torch.multiprocessing.Process):
 
         self.action_size = action_size
         self.set_seeds(self.worker_num)
-        self.shared_model = shared_model
+        self.shared_model = shared_model # 分享模型
         self.local_model = local_model
         self.local_optimizer = Adam(self.local_model.parameters(), lr=0.0, eps=1e-4)
         self.counter = counter
@@ -110,13 +113,13 @@ class Actor_Critic_Worker(torch.multiprocessing.Process):
     def run(self):
         """Starts the worker"""
         torch.set_num_threads(1)
-        for ep_ix in range(self.episodes_to_run):
-            with self.optimizer_lock:
-                Base_Agent.copy_model_over(self.shared_model, self.local_model)
-            epsilon_exploration = self.calculate_new_exploration()
-            state = self.reset_game_for_worker()
+        for ep_ix in range(self.episodes_to_run): # 需要运行的episodes数
+            with self.optimizer_lock: #是否被锁
+                Base_Agent.copy_model_over(self.shared_model, self.local_model) # 从主网络从新获取参数
+            epsilon_exploration = self.calculate_new_exploration() # 计算新的 epsilon
+            state = self.reset_game_for_worker() # 从新开始一个episode
             done = False
-            self.episode_states = []
+            self.episode_states = [] # 完成一个episode后丢弃
             self.episode_actions = []
             self.episode_rewards = []
             self.episode_log_action_probabilities = []
@@ -132,10 +135,10 @@ class Actor_Critic_Worker(torch.multiprocessing.Process):
                 self.critic_outputs.append(critic_outputs)
                 state = next_state
 
-            total_loss = self.calculate_total_loss()
-            self.put_gradients_in_queue(total_loss)
+            total_loss = self.calculate_total_loss() # 完成了一个episode
+            self.put_gradients_in_queue(total_loss) # 传入损失，更新参数
             self.episode_number += 1
-            with self.counter.get_lock():
+            with self.counter.get_lock(): # 为了共享的变量
                 self.counter.value += 1
                 self.results_queue.put(np.sum(self.episode_rewards))
 
@@ -149,17 +152,17 @@ class Actor_Critic_Worker(torch.multiprocessing.Process):
 
     def reset_game_for_worker(self):
         """Resets the game environment so it is ready to play a new episode"""
-        state = self.environment.reset()
+        state = self.environment.reset() # 返回的是一维数组
         if self.action_types == "CONTINUOUS": self.noise.reset()
         return state
 
     def pick_action_and_get_critic_values(self, policy, state, epsilon_exploration=None):
         """Picks an action using the policy"""
-        state = torch.from_numpy(state).float().unsqueeze(0)
-        model_output = policy.forward(state)
+        state = torch.from_numpy(state).float().unsqueeze(0) #把状态数据转换为tensor，数据类型变成float,并且升维
+        model_output = policy.forward(state) # 输入策略网络
         actor_output = model_output[:, list(range(self.action_size))] #we only use first set of columns to decide action, last column is state-value
-        critic_output = model_output[:, -1]
-        action_distribution = create_actor_distribution(self.action_types, actor_output, self.action_size)
+        critic_output = model_output[:, -1] #价值输出打分
+        action_distribution = create_actor_distribution(self.action_types, actor_output, self.action_size) # 随机选取一个动作
         action = action_distribution.sample().cpu().numpy()
         if self.action_types == "CONTINUOUS": action += self.noise.sample()
         if self.action_types == "DISCRETE":
@@ -178,7 +181,7 @@ class Actor_Critic_Worker(torch.multiprocessing.Process):
     def calculate_total_loss(self):
         """Calculates the actor loss + critic loss"""
         discounted_returns = self.calculate_discounted_returns()
-        if self.normalise_rewards:
+        if self.normalise_rewards: # 是否把奖励归一化
             discounted_returns = self.normalise_discounted_returns(discounted_returns)
         critic_loss, advantages = self.calculate_critic_loss_and_advantages(discounted_returns)
         actor_loss = self.calculate_actor_loss(advantages)
@@ -191,8 +194,8 @@ class Actor_Critic_Worker(torch.multiprocessing.Process):
         for ix in range(len(self.episode_states)):
             return_value = self.episode_rewards[-(ix + 1)] + self.discount_rate*discounted_returns[-1]
             discounted_returns.append(return_value)
-        discounted_returns = discounted_returns[1:]
-        discounted_returns = discounted_returns[::-1]
+        discounted_returns = discounted_returns[1:] # 索引1到后边所有的数
+        discounted_returns = discounted_returns[::-1] # 取反
         return discounted_returns
 
     def normalise_discounted_returns(self, discounted_returns):
@@ -205,11 +208,11 @@ class Actor_Critic_Worker(torch.multiprocessing.Process):
 
     def calculate_critic_loss_and_advantages(self, all_discounted_returns):
         """Calculates the critic's loss and the advantages"""
-        critic_values = torch.cat(self.critic_outputs)
-        advantages = torch.Tensor(all_discounted_returns) - critic_values
+        critic_values = torch.cat(self.critic_outputs) # 拼成一个大tensor
+        advantages = torch.Tensor(all_discounted_returns) - critic_values #q值减去v值
         advantages = advantages.detach()
         critic_loss =  (torch.Tensor(all_discounted_returns) - critic_values)**2
-        critic_loss = critic_loss.mean()
+        critic_loss = critic_loss.mean()  # 求平均值
         return critic_loss, advantages
 
     def calculate_actor_loss(self, advantages):
@@ -220,10 +223,10 @@ class Actor_Critic_Worker(torch.multiprocessing.Process):
         return actor_loss
 
     def put_gradients_in_queue(self, total_loss):
-        """Puts gradients in a queue for the optimisation process to use to update the shared model"""
-        self.local_optimizer.zero_grad()
-        total_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.local_model.parameters(), self.gradient_clipping_norm)
+        """Puts gradients in a queue for the optimisation process to use to update the shared model将梯度放入优化过程队列中，用于更新共享模型"""
+        self.local_optimizer.zero_grad() # 把自己的参数归0
+        total_loss.backward() # 反向传播
+        torch.nn.utils.clip_grad_norm_(self.local_model.parameters(), self.gradient_clipping_norm) # 修剪参数
         gradients = [param.grad.clone() for param in self.local_model.parameters()]
-        self.gradient_updates_queue.put(gradients)
+        self.gradient_updates_queue.put(gradients) # 把更新的参数放入更新的队列
 
